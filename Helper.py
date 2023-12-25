@@ -70,3 +70,4 @@ class Helper:
 		blocks = [binary_str[i:i+block_size] for i in range(0, len(binary_str), block_size)]
 
 		return blocks
+

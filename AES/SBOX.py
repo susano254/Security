@@ -1,5 +1,6 @@
 from Helper import Helper
 
+
 class SBOX:
 	Sbox = [
         [0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76],
@@ -41,13 +42,13 @@ class SBOX:
 
 	@staticmethod
 	def run(result_blocks, inverse = False):
-		sbox_result = ""
+		sbox_result = []
 		#3: s_box the result
 		for block in result_blocks:
-			row = int(block[0:3], 2)
+			row = int(block[0:4], 2)
 			column = int(block[4:8], 2)
 
 			sbox_value = SBOX.Sbox[row][column] if not inverse else SBOX.InvSbox[row][column]
-			sbox_result += Helper.decimal_to_binary(sbox_value)
+			sbox_result.append(Helper.decimal_to_binary(sbox_value))
 		return sbox_result
 
