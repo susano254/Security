@@ -15,6 +15,7 @@ key_str = Helper.str_to_binary(key_str)
 B = SBOX.run(Helper.divide_into_blocks(key_str, 8))
 matrix = AES.constructMatrix(B)
 matrix = AES.shiftRows(matrix)
+matrix = AES.mixColumns(matrix)
 
 # cipher_text = DES.encrypt(plain_text, DES_Key(key_str))
 # print(cipher_text)
