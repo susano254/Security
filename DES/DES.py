@@ -1,6 +1,6 @@
 from Helper import Helper
-from Key import Key
-from SBOX import SBOX
+from DES.DES_Key import DES_Key
+from DES.SBOX import SBOX
 import copy
 
 class DES:

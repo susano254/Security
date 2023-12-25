@@ -1,6 +1,6 @@
 from Helper import Helper
 
-class Key:
+class DES_Key:
 	PC_1 = [57, 49, 41, 33, 25, 17, 9,
 			1, 58, 50, 42, 34, 26, 18,
 			10, 2, 59, 51, 43, 35, 27,
