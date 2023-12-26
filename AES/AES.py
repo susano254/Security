@@ -75,7 +75,7 @@ class AES:
     @staticmethod
     def mixColumns(matrix):
         # just an initialization of the C output it will be overwritten later
-        mixed_matrix = []
+        mixed_matrix = matrix
         C_column = []
         for i in range(4):
             B_column = [row[i] for row in matrix]
@@ -92,7 +92,8 @@ class AES:
         for i in range(4):
             result = 0
             for j in range(4):
-                val = int(B_column[j], 2)
+                # val = int(B_column[j], 2)
+                val = B_column[j]
                 result ^= AES.GF_mul(AES.mix_columns_matrix[i][j], val)
             C_column.append(result)
         return C_column
