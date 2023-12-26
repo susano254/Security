@@ -1,3 +1,5 @@
+from AES.Key import Key
+from AES.SBOX import SBOX
 from Helper import Helper
 
 class AES:
@@ -39,14 +41,8 @@ class AES:
         0x0b,0x08,0x0d,0x0e,0x07,0x04,0x01,0x02,0x13,0x10,0x15,0x16,0x1f,0x1c,0x19,0x1a
     ]
 
-    mix_columns = [list(range(256)), mul_2, mul_3]
+    lookup_tables = [list(range(256)), mul_2, mul_3]
 
-    Rcon = [
-        0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
-        0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
-        0x2F, 0x5E, 0xBC, 0x63, 0xC6, 0x97, 0x35, 0x6A,
-        0xD4, 0xB3, 0x7D, 0xFA, 0xEF, 0xC5, 0x91, 0x39,
-    ]
 
     mix_columns_matrix = [
         [2, 3, 1, 1],
@@ -57,6 +53,9 @@ class AES:
 
     @staticmethod
     def constructMatrix(B):
+        for i,b in enumerate(B):
+            B[i] = int(b, 2)
+
         matrix = [
             [B[0], B[4], B[8], B[12]],
             [B[1], B[5], B[9], B[13]],
@@ -66,10 +65,29 @@ class AES:
         return matrix
     
     @staticmethod
-    def shiftRows(matrix):
-        matrix[1] = matrix[1][1:] + matrix[1][0:1]
-        matrix[2] = matrix[2][2:] + matrix[2][0:2]
-        matrix[3] = matrix[3][3:] + matrix[3][0:3]
+    def sub_bytes(matrix, inverse = False):
+        matrix = SBOX.run(matrix, inverse)
+        return matrix
+
+    @staticmethod
+    def shiftRows(matrix, inverse = False):
+        if inverse:
+            matrix[1] = matrix[1][-1:] + matrix[1][0:-1]
+            matrix[2] = matrix[2][-2:] + matrix[2][0:-2]
+            matrix[3] = matrix[3][-3:] + matrix[3][0:-3]
+            return matrix
+        
+        else:
+            matrix[1] = matrix[1][1:] + matrix[1][0:1]
+            matrix[2] = matrix[2][2:] + matrix[2][0:2]
+            matrix[3] = matrix[3][3:] + matrix[3][0:3]
+            return matrix
+
+    @staticmethod
+    def mixColumnsInv(matrix):
+        matrix = AES.mixColumns(matrix)
+        matrix = AES.mixColumns(matrix)
+        matrix = AES.mixColumns(matrix)
         return matrix
 
     @staticmethod
@@ -78,8 +96,11 @@ class AES:
         mixed_matrix = matrix
         C_column = []
         for i in range(4):
+            # slice the column out of the matrix 
             B_column = [row[i] for row in matrix]
+            # mix it 
             C_column = AES.mix_one_column(B_column)
+            # put it back in the mixed matrix 
             for j in range(4):
                 mixed_matrix[j][i] = C_column[j]
         
@@ -92,13 +113,84 @@ class AES:
         for i in range(4):
             result = 0
             for j in range(4):
-                # val = int(B_column[j], 2)
                 val = B_column[j]
-                result ^= AES.GF_mul(AES.mix_columns_matrix[i][j], val)
+                result ^= AES.GF2_mul(AES.mix_columns_matrix[i][j], val)
             C_column.append(result)
         return C_column
 
     
     @staticmethod
-    def GF_mul(mix_matrix_value, B_value):
-        return AES.mix_columns[mix_matrix_value - 1][B_value]
+    def GF2_mul(mix_matrix_value, B_value):
+        return AES.lookup_tables[mix_matrix_value - 1][B_value]
+    
+    @staticmethod
+    def add_sub_key(matrix, key):
+        result = []
+
+        for i in range(4):
+            result.append([])
+            for j in range(4):
+                result[-1].append(matrix[i][j] ^ key[i][j])
+        return result
+    
+    @staticmethod
+    def encrypt(plain_text, key_str):
+        plain_text = Helper.str_to_binary(plain_text)
+
+        key_str = Helper.str_to_binary(key_str)
+
+        matrix = AES.constructMatrix(Helper.divide_into_blocks(plain_text, 8))
+        key = Key(key_str)
+
+        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
+
+        for i in range(1, 10):
+            matrix = AES.sub_bytes(matrix)
+            matrix = AES.shiftRows(matrix)
+            matrix = AES.mixColumns(matrix)
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
+        
+        matrix = AES.sub_bytes(matrix)
+        matrix = AES.shiftRows(matrix)
+        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
+
+        stream = ''
+        for column in range(4):
+            for row in range(4):
+                binary = Helper.decimal_to_binary(matrix[row][column])
+                hex = Helper.binary_to_hex(binary, 2)
+                stream += hex
+        return stream
+    
+
+    @staticmethod
+    def decrypt(cipher, key_str):
+        cipher = Helper.hex_to_binary(cipher)
+        key_str = Helper.str_to_binary(key_str)
+
+        matrix = AES.constructMatrix(Helper.divide_into_blocks(cipher, 8))
+        key = Key(key_str)
+
+
+        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
+        matrix = AES.shiftRows(matrix, True)
+        matrix = AES.sub_bytes(matrix, True)
+
+        for i in range(9, 0, -1):
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
+            matrix = AES.mixColumnsInv(matrix)
+            matrix = AES.shiftRows(matrix, True)
+            matrix = AES.sub_bytes(matrix, True)
+
+        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
+
+        stream = ''
+        for column in range(4):
+            for row in range(4):
+                stream += chr(matrix[row][column])
+        return stream
+
+
+
+
+

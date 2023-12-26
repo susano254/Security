@@ -35,6 +35,21 @@ class Helper:
 		return bin(decimal)[2:].zfill(fill)
 
 	@staticmethod
+	def decimals_to_binary(decimals, fill=8):
+		for i, decimal in enumerate(decimals):
+			decimals[i] = Helper.decimal_to_binary(decimal)
+
+		return decimals
+
+	@staticmethod
+	def binaries_to_decimals(binaries):
+		decimals = []
+		for binary in binaries:
+			decimals.append(int(binary, 2))
+
+		return decimals
+
+	@staticmethod
 	def hex_to_binary(hex_string):
 		binary_string = ''.join(format(int(hex_char, 16), '04b') for hex_char in hex_string)
 		return binary_string
@@ -70,4 +85,13 @@ class Helper:
 		blocks = [binary_str[i:i+block_size] for i in range(0, len(binary_str), block_size)]
 
 		return blocks
+
+	@staticmethod
+	def join_bytes_to_word(bytes):
+		# Assuming bytes[0] is the least significant byte
+		word = 0
+		for i in range(4):
+			word |= bytes[i] << (i * 8)
+		return word
+
 

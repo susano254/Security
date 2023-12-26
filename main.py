@@ -1,29 +1,13 @@
-from Helper import Helper
-from AES.SBOX import SBOX
 from AES.AES import AES
+from Helper import Helper
+import binascii
 
-plain_text = "ABCDEF"
+plain_text = "ABCDEFGHABCDEFGH"
 key_str = "12345678abcdefgh"
 
-# plain_text = input("Enter plain text: ")
-# key_str = input("Enter 8 key characters: ")
-
-plain_text = Helper.str_to_binary(plain_text)
-key_str = Helper.str_to_binary(key_str)
 
 
-B = SBOX.run(Helper.divide_into_blocks(key_str, 8))
-matrix = AES.constructMatrix(B)
-matrix = AES.shiftRows(matrix)
-
-B_column = [212, 212, 212, 213]
-B_column = AES.mix_one_column(B_column)
-print(B_column)
-B_column = AES.mix_one_column(B_column)
-B_column = AES.mix_one_column(B_column)
-B_column = AES.mix_one_column(B_column)
-print(B_column)
-# cipher_text = DES.encrypt(plain_text, DES_Key(key_str))
-# print(cipher_text)
-# plain_text = DES.decrypt(cipher_text, DES_Key(key_str))
-# print(plain_text)
+cipher = AES.encrypt(plain_text, key_str)
+print(cipher)
+plain_text = AES.decrypt(cipher, key_str)
+print(plain_text)
