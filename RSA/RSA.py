@@ -9,7 +9,6 @@ class RSA:
 	n = None
 
 
-
 	@staticmethod
 	def sieveOfEratosthenes(size = 1000):
 		primesOrNot = [False, False] + [True] * (size - 2)
@@ -26,93 +25,103 @@ class RSA:
 
 
 	@staticmethod
-	def pickRandomPrime():
+	def choosePrime():
 		i = random.randint(0, len(RSA.primes) - 1)
 		prime = RSA.primes[i]
 		RSA.primes.remove(prime)
 		return prime
 
 
-	def generateKeys():
-		p = RSA.pickRandomPrime() 
-		q = RSA.pickRandomPrime() 
-
-		n = p * q
-		phi_n = (p - 1) * (q - 1)
-
+	@staticmethod
+	def choose_e(phi_n):
 		e = 2
 		while True:
 			if math.gcd(e, phi_n) == 1:
-				break
+				return e
 			e += 1
 
-		# d = (k*Φ(n) + 1) / e for some integer k
-		public_key = e
 
+	@staticmethod
+	def calculate_d(phi_n, e):
 		d = 2
 		while True:
-			if (d * e) % fi == 1:
+			if (d * e) % phi_n == 1:
 				break
 			d += 1
 
-		private_key = d
+
+	def generateKeys():
+		p = RSA.choosePrime() 
+		q = RSA.choosePrime() 
+
+		RSA.n = p * q
+		phi_n = (p - 1) * (q - 1)
+
+
+		RSA.public_key = RSA.choose_e(phi_n)
+
+
+		RSA.private_key = RSA.calculate_d(phi_n, RSA.public_key)
 
 
 	# To encrypt the given number
 	def encrypt(message):
-		global public_key, n
-		e = public_key
+		e = RSA.public_key
+
+		# X^e mod n 
 		encrypted_text = 1
 		while e > 0:
 			encrypted_text *= message
-			encrypted_text %= n
+			encrypted_text %= RSA.n
 			e -= 1
+
 		return encrypted_text
 
 
 	# To decrypt the given number
 	def decrypt(encrypted_text):
-		global private_key, n
-		d = private_key
+		d = RSA.private_key
+
+		# y^d mod n 
 		decrypted = 1
 		while d > 0:
 			decrypted *= encrypted_text
-			decrypted %= n
+			decrypted %= RSA.n
 			d -= 1
+
 		return decrypted
 
 
-	# First converting each character to its ASCII value and
-	# then encoding it then decoding the number to get the
-	# ASCII and converting it to character
 	def encoder(message):
 		encoded = []
-		# Calling the encrypting function in encoding function
 		for letter in message:
-			encoded.append(encrypt(ord(letter)))
+			decimal_val = ord(letter)
+			cipher_letter = RSA.encrypt(decimal_val)
+			encoded.append(cipher_letter)
 		return encoded
 
 
-	def decoder(encoded):
-		s = ''
-		# Calling the decrypting function decoding function
-		for num in encoded:
-			s += chr(decrypt(num))
-		return s
+	def decoder(cipher):
+		stream = ''
+
+		for cipher_letter in cipher:
+			decimal_val = RSA.decrypt(cipher_letter)
+			stream += chr(decimal_val)
+		return stream 
 
 
-	if __name__ == '__main__':
-		primefiller()
-		setkeys()
-		message = "Test Message"
-		# Uncomment below for manual input
-		# message = input("Enter the message\n")
-		# Calling the encoding function
-		coded = encoder(message)
+	# if __name__ == '__main__':
+	# 	primefiller()
+	# 	setkeys()
+	# 	message = "Test Message"
+	# 	# Uncomment below for manual input
+	# 	# message = input("Enter the message\n")
+	# 	# Calling the encoding function
+	# 	coded = encoder(message)
 
-		print("Initial message:")
-		print(message)
-		print("\n\nThe encoded message(encrypted by public key)\n")
-		print(''.join(str(p) for p in coded))
-		print("\n\nThe decoded message(decrypted by public key)\n")
-		print(''.join(str(p) for p in decoder(coded)))
+	# 	print("Initial message:")
+	# 	print(message)
+	# 	print("\n\nThe encoded message(encrypted by public key)\n")
+	# 	print(''.join(str(p) for p in coded))
+	# 	print("\n\nThe decoded message(decrypted by public key)\n")
+	# 	print(''.join(str(p) for p in decoder(coded)))
