@@ -139,28 +139,37 @@ class AES:
 
         key_str = Helper.str_to_binary(key_str)
 
-        matrix = AES.constructMatrix(Helper.divide_into_blocks(plain_text, 8))
-        key = Key(key_str)
+        input_stream = Helper.divide_into_blocks(plain_text, 128)
+        output_stream = ''
 
-        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
 
-        for i in range(1, 10):
+
+        for data in input_stream:
+            data = Helper.divide_into_blocks(data, 8)
+            matrix = AES.constructMatrix(data)
+            key = Key(key_str)
+
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
+
+            for i in range(1, 10):
+                matrix = AES.sub_bytes(matrix)
+                matrix = AES.shiftRows(matrix)
+                matrix = AES.mixColumns(matrix)
+                matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
+            
             matrix = AES.sub_bytes(matrix)
             matrix = AES.shiftRows(matrix)
-            matrix = AES.mixColumns(matrix)
-            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
-        
-        matrix = AES.sub_bytes(matrix)
-        matrix = AES.shiftRows(matrix)
-        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
 
-        stream = ''
-        for column in range(4):
-            for row in range(4):
-                binary = Helper.decimal_to_binary(matrix[row][column])
-                hex = Helper.binary_to_hex(binary, 2)
-                stream += hex
-        return stream
+            stream = ''
+            for column in range(4):
+                for row in range(4):
+                    binary = Helper.decimal_to_binary(matrix[row][column])
+                    hex = Helper.binary_to_hex(binary, 2)
+                    stream += hex
+            output_stream += stream
+
+        return output_stream
     
 
     @staticmethod
@@ -168,27 +177,35 @@ class AES:
         cipher = Helper.hex_to_binary(cipher)
         key_str = Helper.str_to_binary(key_str)
 
-        matrix = AES.constructMatrix(Helper.divide_into_blocks(cipher, 8))
-        key = Key(key_str)
+        input_stream = Helper.divide_into_blocks(cipher, 128)
+        output_stream = ''
+
+        for cipher_block in input_stream:
+            matrix = AES.constructMatrix(Helper.divide_into_blocks(cipher_block, 8))
+            key = Key(key_str)
 
 
-        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
-        matrix = AES.shiftRows(matrix, True)
-        matrix = AES.sub_bytes(matrix, True)
-
-        for i in range(9, 0, -1):
-            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
-            matrix = AES.mixColumnsInv(matrix)
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(10))
             matrix = AES.shiftRows(matrix, True)
             matrix = AES.sub_bytes(matrix, True)
 
-        matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
+            for i in range(9, 0, -1):
+                matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(i))
+                matrix = AES.mixColumnsInv(matrix)
+                matrix = AES.shiftRows(matrix, True)
+                matrix = AES.sub_bytes(matrix, True)
 
-        stream = ''
-        for column in range(4):
-            for row in range(4):
-                stream += chr(matrix[row][column])
-        return stream
+            matrix = AES.add_sub_key(matrix, key.extract_key_i_grid(0))
+
+            stream = ''
+            for column in range(4):
+                for row in range(4):
+                    stream += chr(matrix[row][column])
+            
+            output_stream += stream
+        
+        output_stream = output_stream.replace(chr(255), '')
+        return output_stream
 
 
 
